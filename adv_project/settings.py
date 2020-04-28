@@ -27,9 +27,12 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [config('ALLOWED_HOSTS')]
 DATABASE_URL = config('DATABASE_URL')
-DATABASES['default'] = dj_database_url.config(DATABASE_URL)
+print(DATABASE_URL)
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+DATABASES['default'] = dj_database_url.config(default=DATABASE_URL)
 
 # Application definition
 
@@ -157,3 +160,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 import django_heroku
 django_heroku.settings(locals())
+
+del DATABASES['default']['OPTIONS']['sslmode']
