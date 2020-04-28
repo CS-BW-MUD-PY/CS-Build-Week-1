@@ -1,19 +1,24 @@
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from django.contrib.auth import get_user_model # If used custom user model
 
-from rest_framework.serializers import (
-    HyperlinkedIdentityField,
-    ModelSerializer,
-    SerializerMethodField,
-    ValidationError
-)
+UserModel = get_user_model()
 
-User = get_user_model()
 
-class UserCreateSerializer(ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(write_only=True)
+
+    def create(self, validated_data):
+
+        user = UserModel.objects.create(
+            username=validated_data['username']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+
+        return user
+
     class Meta:
-        model = User
-        fields = [
-            'username',
-            'password'
-        ]
+        model = UserModel
+        # Tuple of serialized model fields (see link [2])
+        fields = ( "id", "username", "password", )
