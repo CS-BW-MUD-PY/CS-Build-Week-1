@@ -27,12 +27,12 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = [config('ALLOWED_HOSTS')]
-DATABASE_URL = config('DATABASE_URL')
-print(DATABASE_URL)
+hosts = config('ALLOWED_HOSTS').split(',')
+
+ALLOWED_HOSTS = [host for host in hosts]
+
 DATABASES = {}
-DATABASES['default'] = dj_database_url.config(conn_max_age=600)
-DATABASES['default'] = dj_database_url.config(default=DATABASE_URL)
+DATABASES['default'] = dj_database_url.config(default=config('DATABASE_URL'), conn_max_age=600)
 
 # Application definition
 
@@ -48,11 +48,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
-    'django.contrib.sites',
     'rest_auth',
-    'rest_auth.registration',
+    'django.contrib.sites',
     'allauth',
     'allauth.account',
+    'rest_auth.registration',
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
