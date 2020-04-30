@@ -11,7 +11,9 @@ class World():
         self.entrance = None
     def generate_rooms(self):
         # clearing users and rooms upon generating new world
-        User.objects.all().delete()
+        if(len(User.objects.all()) > 0):
+            User.objects.all().delete()
+             
         Room.objects.all().delete()
         # creating room grid 
         rooms = [[None for col in range(self.length)] for row in range(self.length)]        
@@ -85,12 +87,12 @@ class World():
                     room.description = desc
                     room.save()
 
-        def print_rooms(self):
-            map = []
-            for chars in self.grid:
-                map.append(''.join(chars))
+    def print_rooms(self):
+        map = []
+        for chars in self.grid:
+            map.append(''.join(chars))
 
-            return map
+        return map
             
 
 w = World()
