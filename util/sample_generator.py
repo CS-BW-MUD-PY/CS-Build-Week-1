@@ -1,5 +1,4 @@
 from adventure.models import Room
-from django.contrib.auth.models import User
 import numpy as np
 
 class World():
@@ -10,10 +9,7 @@ class World():
         self.grid = [[' ' for col in range(self.length)] for row in range(self.length)]
         self.entrance = None
     def generate_rooms(self):
-        # clearing users and rooms upon generating new world
-        if(len(User.objects.all()) > 0):
-            User.objects.all().delete()
-             
+        # clearing users and rooms upon generating new world             
         Room.objects.all().delete()
         # creating room grid 
         rooms = [[None for col in range(self.length)] for row in range(self.length)]        
