@@ -13,7 +13,6 @@ class World():
         # clearing users and rooms upon generating new world
         User.objects.all().delete()
         Room.objects.all().delete()
-
         # creating room grid 
         rooms = [[None for col in range(self.length)] for row in range(self.length)]        
         self.entrance = Room(title='Entrance', description='description')
@@ -61,9 +60,6 @@ class World():
                         self.grid[row + (dx == 'n_to') - (dx == 's_to')][col + (dx == 'w_to') - (dx == 'e_to')] = '*'
                     room = rooms[row][col]
 
-        for chars in self.grid:
-            print(''.join(chars))
-
         tadj = ['Abandoned', 'Derelict', 'Ruined', 'Enchanted']
         tnoun = ['Chamber', 'Garden', 'Hall', 'Shrine']
         lighting = ['In the dim light you see', 'Sconces on the wall illuminate', 'Through light fog you glimpse', 'Burning candles reveal']
@@ -88,6 +84,14 @@ class World():
                     room.title = title
                     room.description = desc
                     room.save()
+
+        def print_rooms(self):
+            map = []
+            for chars in self.grid:
+                map.append(''.join(chars))
+
+            return map
+            
 
 w = World()
 num_rooms = 44
