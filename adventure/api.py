@@ -6,6 +6,7 @@ from decouple import config
 from django.contrib.auth.models import User
 from .models import *
 from rest_framework.decorators import api_view
+from util.sample_generator import World, w
 import json
 
 # instantiate pusher
@@ -14,6 +15,7 @@ import json
 @csrf_exempt
 @api_view(["GET"])
 def initialize(request):
+    print(request.user)
     user = request.user
     player = user.player
     player_id = player.id
@@ -22,10 +24,15 @@ def initialize(request):
     players = room.playerNames(player_id)
     return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players}, safe=True)
 
+@api_view(["GET"])
+def map(request):
+    # return a JsonResponse containing the map string
+    return JsonResponse({'map': World.print_rooms(w)})
 
 # @csrf_exempt
 @api_view(["POST"])
 def move(request):
+    print(request.user)
     dirs={"n": "north", "s": "south", "e": "east", "w": "west"}
     reverse_dirs = {"n": "south", "s": "north", "e": "west", "w": "east"}
     player = request.user.player

@@ -1,162 +1,101 @@
-# Sample Python code that can be used to generate rooms in
-# a zig-zag pattern.
-#
-# You can modify generate_rooms() to create your own
-# procedural generation algorithm and use print_rooms()
-# to see the world.
+from adventure.models import Room
+import numpy as np
 
+class World():
+    def __init__(self, size = 100):
+        self.size = size
+        self.mid = int(size ** (1/2)) * 2 + 1
+        self.length = self.mid * 2 - 1
+        self.grid = [[' ' for col in range(self.length)] for row in range(self.length)]
+        self.entrance = None
+    def generate_rooms(self):
+        # clearing users and rooms upon generating new world             
+        Room.objects.all().delete()
+        # creating room grid 
+        rooms = [[None for col in range(self.length)] for row in range(self.length)]        
+        self.entrance = Room(title='Entrance', description='description')
+        self.entrance.save()
+        # Center Point
+        self.grid[self.mid][self.mid] = 'O'
+        rooms[self.mid][self.mid] = self.entrance
+        dirs = ['n_to', 'e_to', 's_to', 'w_to']
+        # Iterating for number of rooms
+        for i in range(self.size):
+            room = self.entrance            
+            row = self.mid
+            col = self.mid
+            flag = True
+            # Flag to indicate if a new room has been created this iteration
+            while flag:
+                r = np.random.randint(4)
+                dx = dirs[r]
+                rdx = dirs[(r + 2) % 4]
+                row += 2 * (dx == 's_to') - 2 * (dx == 'n_to')
+                col += 2 * (dx == 'e_to') - 2 * (dx == 'w_to')
+                # Ensuring still within boundaries of grid
+                if not 0 <= row < self.length or not 0 <= col < self.length:
+                    row, col = self.mid, self.mid
+                # Creating new room on empty spot as well as connection
+                if self.grid[row][col] == ' ':
+                    n_room = Room(title='unique room', description='description')
+                    n_room.save()
+                    setattr(n_room, rdx, room.id)
+                    setattr(room, dx, n_room.id)
+                    room.save()
+                    n_room.save()
+                    self.grid[row][col] = "X"
+                    self.grid[row + (dx == 'n_to') - (dx == 's_to')][col + (dx == 'w_to') - (dx == 'e_to')] = '*'
+                    rooms[row][col] = n_room
+                    flag = False
+                # Chance to connect existing rooms together in novel way
+                else:
+                    if np.random.randint(self.size) == 0:
+                        o_room = rooms[row][col]
+                        setattr(o_room, rdx, room.id)
+                        setattr(room, dx, o_room.id)
+                        o_room.save()
+                        room.save()
+                        self.grid[row + (dx == 'n_to') - (dx == 's_to')][col + (dx == 'w_to') - (dx == 'e_to')] = '*'
+                    room = rooms[row][col]
 
-class Room:
-    def __init__(self, id, name, description, x, y):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.n_to = None
-        self.s_to = None
-        self.e_to = None
-        self.w_to = None
-        self.x = x
-        self.y = y
-    def __repr__(self):
-        if self.e_to is not None:
-            return f"({self.x}, {self.y}) -> ({self.e_to.x}, {self.e_to.y})"
-        return f"({self.x}, {self.y})"
-    def connect_rooms(self, connecting_room, direction):
-        '''
-        Connect two rooms in the given n/s/e/w direction
-        '''
-        reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
-        reverse_dir = reverse_dirs[direction]
-        setattr(self, f"{direction}_to", connecting_room)
-        setattr(connecting_room, f"{reverse_dir}_to", self)
-    def get_room_in_direction(self, direction):
-        '''
-        Connect two rooms in the given n/s/e/w direction
-        '''
-        return getattr(self, f"{direction}_to")
-
-
-class World:
-    def __init__(self):
-        self.grid = None
-        self.width = 0
-        self.height = 0
-    def generate_rooms(self, size_x, size_y, num_rooms):
-        '''
-        Fill up the grid, bottom to top, in a zig-zag pattern
-        '''
-
-        # Initialize the grid
-        self.grid = [None] * size_y
-        self.width = size_x
-        self.height = size_y
-        for i in range( len(self.grid) ):
-            self.grid[i] = [None] * size_x
-
-        # Start from lower-left corner (0,0)
-        x = -1 # (this will become 0 on the first step)
-        y = 0
-        room_count = 0
-
-        # Start generating rooms to the east
-        direction = 1  # 1: east, -1: west
-
-
-        # While there are rooms to be created...
-        previous_room = None
-        while room_count < num_rooms:
-
-            # Calculate the direction of the room to be created
-            if direction > 0 and x < size_x - 1:
-                room_direction = "e"
-                x += 1
-            elif direction < 0 and x > 0:
-                room_direction = "w"
-                x -= 1
-            else:
-                # If we hit a wall, turn north and reverse direction
-                room_direction = "n"
-                y += 1
-                direction *= -1
-
-            # Create a room in the given direction
-            room = Room(room_count, "A Generic Room", "This is a generic room.", x, y)
-            # Note that in Django, you'll need to save the room after you create it
-
-            # Save the room in the World grid
-            self.grid[y][x] = room
-
-            # Connect the new room to the previous room
-            if previous_room is not None:
-                previous_room.connect_rooms(room, room_direction)
-
-            # Update iteration variables
-            previous_room = room
-            room_count += 1
-
-
+        tadj = ['Abandoned', 'Derelict', 'Ruined', 'Enchanted']
+        tnoun = ['Chamber', 'Garden', 'Hall', 'Shrine']
+        lighting = ['In the dim light you see', 'Sconces on the wall illuminate', 'Through light fog you glimpse', 'Burning candles reveal']
+        ceiling = ['water dripping from the', 'a beautifully painted', 'a partially collapsed']
+        features = ['a broken statue in the corner', 'spiderwebs covering the walls', 'broken ceraminc urns in one corner', 'a jewel encrusted treasure chest']
+        ground = ['uneven stone', 'smooth marble', 'damaged wooden planks', 'cooled molten rock', 'cobblestones', 'stone tiles']
+        cover = ['slimy moss', 'puddles of water', 'soot and ash', 'rat droppings', 'gnawed bones', 'a large rug']
+        doors = ['an open archway', 'the door is ajar', 'a sturdy hardwood door', 'a solid iron door', 'a rotting wooden door', 
+                 'an ornately carved door', 'a metal door engraved with runes', 'a wall has crumbled leaving an opening']
+        # Creating descriptions and titles, rendering certain path descriptions based on direction attributes        
+        for line in rooms:
+            for room in line:
+                if room != None:
+                    north = f'To the north: {np.random.choice(doors)}.' if room.n_to != 0 else ''
+                    east = f'Looking east you see {np.random.choice(doors)}.' if room.e_to != 0 else ''
+                    south = f'To the south {np.random.choice(doors)}.' if room.s_to != 0 else ''
+                    west = f'On the west side {np.random.choice(doors)}.' if room.w_to != 0 else ''
+                    if room.title != 'Entrance':
+                        title = f'{np.random.choice(tadj)} {np.random.choice(tnoun)}'
+                    desc = f'{np.random.choice(lighting)} a room with {np.random.choice(ceiling)} ceiling and {np.random.choice(features)}.  \
+                    The floor is made of {np.random.choice(ground)} covered by {np.random.choice(cover)}.  {north} {south} {east} {west}'
+                    room.title = title
+                    room.description = desc
+                    room.save()
 
     def print_rooms(self):
-        '''
-        Print the rooms in room_grid in ascii characters.
-        '''
+        map = []
+        for chars in self.grid:
+            map.append(''.join(chars))
 
-        # Add top border
-        str = "# " * ((3 + self.width * 5) // 2) + "\n"
-
-        # The console prints top to bottom but our array is arranged
-        # bottom to top.
-        #
-        # We reverse it so it draws in the right direction.
-        reverse_grid = list(self.grid) # make a copy of the list
-        reverse_grid.reverse()
-        for row in reverse_grid:
-            # PRINT NORTH CONNECTION ROW
-            str += "#"
-            for room in row:
-                if room is not None and room.n_to is not None:
-                    str += "  |  "
-                else:
-                    str += "     "
-            str += "#\n"
-            # PRINT ROOM ROW
-            str += "#"
-            for room in row:
-                if room is not None and room.w_to is not None:
-                    str += "-"
-                else:
-                    str += " "
-                if room is not None:
-                    str += f"{room.id}".zfill(3)
-                else:
-                    str += "   "
-                if room is not None and room.e_to is not None:
-                    str += "-"
-                else:
-                    str += " "
-            str += "#\n"
-            # PRINT SOUTH CONNECTION ROW
-            str += "#"
-            for room in row:
-                if room is not None and room.s_to is not None:
-                    str += "  |  "
-                else:
-                    str += "     "
-            str += "#\n"
-
-        # Add bottom border
-        str += "# " * ((3 + self.width * 5) // 2) + "\n"
-
-        # Print string
-        print(str)
-
+        return map
+            
 
 w = World()
 num_rooms = 44
 width = 8
 height = 7
-w.generate_rooms(width, height, num_rooms)
-w.print_rooms()
+w.generate_rooms()
 
 
-print(f"\n\nWorld\n  height: {height}\n  width: {width},\n  num_rooms: {num_rooms}\n")
+# print(f"\n\nWorld\n  height: {height}\n  width: {width},\n  num_rooms: {num_rooms}\n")
